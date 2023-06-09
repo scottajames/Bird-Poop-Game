@@ -16,18 +16,19 @@
       border: 1px solid #999;
       margin: 0 auto;
       display: block;
+      margin-bottom: 0;
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <canvas id="gameCanvas" width="600" height="400"></canvas>
 
   <script>
     // Game variables
     var canvas, ctx;
     var blockX, blockY;
-    var blocks, whiteBlocks;
-    var jumpCount;
+    var blockVelocityX, blockVelocityY;
+    var blocks, blackBlocks;
     var gameover;
 
     // Initialize the game
@@ -36,18 +37,19 @@
       ctx = canvas.getContext('2d');
 
       blockX = canvas.width / 2 - 20;
-      blockY = canvas.height - 100;
+      blockY = canvas.height - 50;
+      blockVelocityX = 0;
+      blockVelocityY = 0;
 
       blocks = [];
-      whiteBlocks = [];
-      jumpCount = 0;
+      blackBlocks = [];
       gameover = false;
 
-      createBlock();
       createBlock();
 
       // Event listeners
       document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('keyup', handleKeyUp);
 
       // Start the game loop
       gameLoop();
@@ -65,24 +67,35 @@
 
     // Update game state
     function update() {
-      // Move the blocks downwards
-      for (var i = 0; i < blocks.length; i++) {
-        blocks[i].y += 1;
+      // Apply gravity
+      blockVelocityY += 0.5;
+
+      // Apply velocity to the block's position
+      blockX += blockVelocityX;
+      blockY += blockVelocityY;
+
+      // Apply collision with the walls
+      if (blockX < 0) {
+        blockX = 0;
+      } else if (blockX > canvas.width - 40) {
+        blockX = canvas.width - 40;
       }
 
-      // Check collision with white blocks
-      for (var i = 0; i < whiteBlocks.length; i++) {
-        if (blockY - whiteBlocks[i].y < 5 && whiteBlocks[i].x > blockX && whiteBlocks[i].x < blockX + 40) {
-          // Add a jump when a white block is hit
-          jumpCount++;
-          whiteBlocks.splice(i, 1);
-          createBlock();
+      // Move the blocks from right to left at the bottom
+      for (var i = 0; i < blocks.length; i++) {
+        blocks[i].x -= 2;
+
+        // Check collision with the black blocks
+        if (blockY >= blocks[i].y - 40 && blockY <= blocks[i].y + 40 && blockX >= blocks[i].x - 40 && blockX <= blocks[i].x) {
+          gameover = true;
+          break;
         }
       }
 
       // Check collision with the ground
       if (blockY >= canvas.height - 50) {
-        gameover = true;
+        blockY = canvas.height - 50;
+        blockVelocityY = 0;
       }
     }
 
@@ -93,24 +106,13 @@
 
       // Draw the block
       ctx.fillStyle = 'blue';
-      ctx.fillRect(blockX, blockY, 40, 50);
+      ctx.fillRect(blockX, blockY - 50, 40, 50);
 
-      // Draw the blocks below
+      // Draw the blocks
       for (var i = 0; i < blocks.length; i++) {
         ctx.fillStyle = 'gray';
-        ctx.fillRect(blocks[i].x, blocks[i].y, 40, 40);
+        ctx.fillRect(blocks[i].x, blocks[i].y - 40, 40, 40);
       }
-
-      // Draw the white blocks
-      for (var i = 0; i < whiteBlocks.length; i++) {
-        ctx.fillStyle = 'white';
-        ctx.fillRect(whiteBlocks[i].x, whiteBlocks[i].y, 10, 10);
-      }
-
-      // Draw jump count
-      ctx.fillStyle = 'black';
-      ctx.font = '16px Arial';
-      ctx.fillText('Jumps: ' + jumpCount, 10, 20);
 
       // Draw game over text
       if (gameover) {
@@ -123,21 +125,25 @@
     // Create a new block
     function createBlock() {
       var block = {
-        x: Math.random() * (canvas.width - 40),
-        y: -40
+        x: canvas.width,
+        y: canvas.height - 40
       };
       blocks.push(block);
     }
 
     // Handle key down events
     function handleKeyDown(event) {
-      if (event.keyCode === 32) { // Space key
-        // Drop a white block
-        var whiteBlock = {
-          x: blockX + 15,
-          y: blockY + 50
-        };
-        whiteBlocks.push(whiteBlock);
+      if (event.keyCode === 37) { // Left arrow key
+        blockVelocityX = -2;
+      } else if (event.keyCode === 39) { // Right arrow key
+        blockVelocityX = 2;
+      }
+    }
+
+    // Handle key up events
+    function handleKeyUp(event) {
+      if (event.keyCode === 37 || event.keyCode === 39) {
+        blockVelocityX = 0;
       }
     }
 
