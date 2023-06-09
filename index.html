@@ -9,93 +9,64 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      height: 92.5vh;
     }
 
     #gameCanvas {
       background-color: #f0f0f0;
       border: 1px solid #999;
-      margin: 0 auto;
       display: block;
-      margin-bottom: 0;
+      width: 40vw;
+      height: 85vh;
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="600" height="400"></canvas>
+  <canvas id="gameCanvas"></canvas>
 
   <script>
+    var canvas = document.getElementById('gameCanvas');
+    var ctx = canvas.getContext('2d');
+
     // Game variables
-    var canvas, ctx;
-    var blockX, blockY;
-    var blockVelocityX, blockVelocityY;
-    var blocks, blackBlocks;
-    var gameover;
+    var player = {
+      x: canvas.width / 4,  // Starting position of the player on the x-axis
+      y: canvas.height / 2, // Starting position of the player on the y-axis
+      width: 40,            // Width of the player
+      height: 50,           // Height of the player
+      velocityX: 0,         // Velocity of the player on the x-axis
+      velocityY: 0          // Velocity of the player on the y-axis
+    };
 
-    // Initialize the game
-    function init() {
-      canvas = document.getElementById('gameCanvas');
-      ctx = canvas.getContext('2d');
+    var block = {
+      x: canvas.width,     // Starting position of the block on the x-axis
+      y: canvas.height - 40, // Starting position of the block on the y-axis
+      width: 60,            // Width of the block
+      height: 40,           // Height of the block
+      velocityX: -2         // Velocity of the block on the x-axis
+    };
 
-      blockX = canvas.width / 2 - 20;
-      blockY = canvas.height - 50;
-      blockVelocityX = 0;
-      blockVelocityY = 0;
+    var gameover = false;
 
-      blocks = [];
-      blackBlocks = [];
-      gameover = false;
-
-      createBlock();
-
-      // Event listeners
-      document.addEventListener('keydown', handleKeyDown);
-      document.addEventListener('keyup', handleKeyUp);
-
-      // Start the game loop
-      gameLoop();
+    // Update player position
+    function updatePlayerPosition() {
+      player.x += player.velocityX;
+      player.y += player.velocityY;
     }
 
-    // Game loop
-    function gameLoop() {
-      if (!gameover) {
-        update();
-        draw();
-      }
+    // Update block position
+    function updateBlockPosition() {
+      block.x += block.velocityX;
 
-      requestAnimationFrame(gameLoop);
-    }
-
-    // Update game state
-    function update() {
-      // Apply gravity
-      blockVelocityY += 0.5;
-
-      // Apply velocity to the block's position
-      blockX += blockVelocityX;
-      blockY += blockVelocityY;
-
-      // Apply collision with the walls
-      if (blockX < 0) {
-        blockX = 0;
-      } else if (blockX > canvas.width - 40) {
-        blockX = canvas.width - 40;
-      }
-
-      // Move the blocks from right to left at the bottom
-      for (var i = 0; i < blocks.length; i++) {
-        blocks[i].x -= 2;
-
-        // Check collision with the black blocks
-        if (blockY >= blocks[i].y - 40 && blockY <= blocks[i].y + 40 && blockX >= blocks[i].x - 40 && blockX <= blocks[i].x) {
-          gameover = true;
-          break;
-        }
-      }
-
-      // Check collision with the ground
-      if (blockY >= canvas.height - 50) {
-        blockY = canvas.height - 50;
-        blockVelocityY = 0;
+      // Check for collision with the player
+      if (player.x < block.x + block.width &&
+          player.x + player.width > block.x &&
+          player.y < block.y + block.height &&
+          player.y + player.height > block.y) {
+        gameover = true;
       }
     }
 
@@ -104,15 +75,13 @@
       // Clear the canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw the block
+      // Draw the player
       ctx.fillStyle = 'blue';
-      ctx.fillRect(blockX, blockY - 50, 40, 50);
+      ctx.fillRect(player.x, player.y, player.width, player.height);
 
-      // Draw the blocks
-      for (var i = 0; i < blocks.length; i++) {
-        ctx.fillStyle = 'gray';
-        ctx.fillRect(blocks[i].x, blocks[i].y - 40, 40, 40);
-      }
+      // Draw the block
+      ctx.fillStyle = 'gray';
+      ctx.fillRect(block.x, block.y, block.width, block.height);
 
       // Draw game over text
       if (gameover) {
@@ -120,35 +89,36 @@
         ctx.font = '30px Arial';
         ctx.fillText('Game Over!', canvas.width / 2 - 100, canvas.height / 2);
       }
-    }
 
-    // Create a new block
-    function createBlock() {
-      var block = {
-        x: canvas.width,
-        y: canvas.height - 40
-      };
-      blocks.push(block);
+      requestAnimationFrame(draw);
     }
 
     // Handle key down events
     function handleKeyDown(event) {
       if (event.keyCode === 37) { // Left arrow key
-        blockVelocityX = -2;
+        player.velocityX = -2;
       } else if (event.keyCode === 39) { // Right arrow key
-        blockVelocityX = 2;
+        player.velocityX = 2;
       }
     }
 
     // Handle key up events
     function handleKeyUp(event) {
       if (event.keyCode === 37 || event.keyCode === 39) {
-        blockVelocityX = 0;
+        player.velocityX = 0;
       }
     }
 
+    // Start the game
+    function startGame() {
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('keyup', handleKeyUp);
+
+      draw();
+    }
+
     // Start the game when the page loads
-    window.onload = init;
+    window.onload = startGame;
   </script>
 </body>
 </html>
