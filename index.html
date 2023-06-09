@@ -31,39 +31,263 @@
     var canvas = document.getElementById('gameCanvas');
     var ctx = canvas.getContext('2d');
 
+    var isGameOver = false;
+    var score = 100;
+
+    var playerImage;
     var player = {
-      x: canvas.width / 4,              // Starting position of the player on the x-axis
-      y: canvas.height / 2,             // Starting position of the player on the y-axis
-      width: canvas.width * 0.1,        // Width of the player using vw unit
-      height: canvas.height * 0.15,     // Height of the player using vh unit
-      velocityX: 0,                     // Velocity of the player on the x-axis
-      velocityY: 0                      // Velocity of the player on the y-axis
+      x: canvas.width / 10,              // Starting position of the player on the x-axis
+      y: canvas.height / 5,              // Starting position of the player on the y-axis
+      width: canvas.width * 0.08,        // Width of the player using vw unit
+      height: canvas.height * 0.07,      // Height of the player using vh unit
+      velocityX: 0,                      // Velocity of the player on the x-axis
+      velocityY: 0,                      // Velocity of the player on the y-axis
+      isMovingLeft: false,               // Track if the player is moving left
+      isMovingRight: false               // Track if the player is moving right
     };
 
-    var playerImage = new Image();
-    playerImage.onload = function() {
-      // Start the game when the image is loaded
-      updateGame();
-    };
-    playerImage.src = 'Bird.png';  // Replace with the actual filename of your player image
+    // Load player images
+    var playerImageRight = new Image();
+    playerImageRight.src = 'BirdRight.png';
 
-    // Draw the player
+    var playerImageLeft = new Image();
+    playerImageLeft.src = 'BirdLeft.png';
+
+    // Set initial player image
+    playerImage = playerImageRight;
+
+    // Block variables
+    var blocks = [];
+    var blockWidth = 30;
+    var blockHeight = 30;
+    var blockSpeeds = {
+      red: 2,    // Speed for red block (interval: 2 seconds)
+      blue: 1,   // Speed for blue block (interval: 1 second)
+      green: 3   // Speed for green block (interval: 3 seconds)
+    };
+
+    // Handle keydown event for left and right arrow keys and Space key
+    document.addEventListener('keydown', function(event) {
+      if (event.code === 'ArrowLeft') {
+        player.isMovingLeft = true;
+        player.isMovingRight = false;
+        playerImage = playerImageLeft;
+      } else if (event.code === 'ArrowRight') {
+        player.isMovingRight = true;
+        player.isMovingLeft = false;
+        playerImage = playerImageRight;
+      } else if (event.code === 'Space') {
+        if (isGameOver) {
+          restartGame();
+        } else {
+          if (score > 0) {
+            dropBlock();
+            score -= 10;
+            if (score <= 0) {
+              score = 0;
+              gameOver();
+            }
+          }
+        }
+      }
+    });
+
+    // Handle keyup event for left and right arrow keys
+    document.addEventListener('keyup', function(event) {
+      if (event.code === 'ArrowLeft') {
+        player.isMovingLeft = false;
+      } else if (event.code === 'ArrowRight') {
+        player.isMovingRight = false;
+      }
+    });
+
+    // Game over function
+    function gameOver() {
+      // Stop the game or perform any desired game over actions
+      player.isMovingLeft = false;
+      player.isMovingRight = false;
+
+      // Set game over state
+      isGameOver = true;
+
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Display the game over message in the canvas
+      ctx.font = '30px Arial';
+      ctx.fillStyle = '#000';
+      ctx.textAlign = 'center';
+      ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2);
+      ctx.fillText('Press Space to Restart', canvas.width / 2, (canvas.height / 2) + 40);
+    }
+
+    // Restart the game
+    function restartGame() {
+      isGameOver = false;
+      score = 100;
+      player.x = canvas.width / 10;
+      player.y = canvas.height / 5;
+      player.velocityX = 0;
+      player.velocityY = 0;
+      player.isMovingLeft = false;
+      player.isMovingRight = false;
+      playerImage = playerImageRight;
+      blocks = []; // Clear blocks array
+      gameLoop();
+    }
+
+    // Update player position
+    function updatePlayerPosition() {
+      // Apply gravity
+      player.velocityY += 0.0005;
+      player.y += player.velocityY;
+
+      // Move player left or right
+      if (player.isMovingLeft) {
+        player.velocityX = -5;
+      } else if (player.isMovingRight) {
+        player.velocityX = 5;
+      } else {
+        player.velocityX = 0;
+      }
+
+      player.x += player.velocityX;
+
+      // Restrict player within the canvas boundaries
+      if (player.x < 0) {
+        player.x = 0;
+      } else if (player.x + player.width > canvas.width) {
+        player.x = canvas.width - player.width;
+      }
+
+      if (player.y < 0) {
+        player.y = 0;
+      } else if (player.y + player.height > canvas.height) {
+        player.y = canvas.height - player.height;
+      }
+    }
+
+    // Function to drop a block
+    function dropBlock(color, speed) {
+      var block = {
+        x: player.x + player.width / 2,   // X position of the block (centered above the player)
+        y: player.y + player.height,      // Y position of the block (above the player)
+        width: 5,                         // Width of the block
+        height: 5,                        // Height of the block
+        velocityX: -speed                 // Velocity of the block on the X-axis (moving from right to left)
+      };
+
+      switch (color) {
+        case 'red':
+          block.color = '#ff0000';
+          break;
+        case 'blue':
+          block.color = '#0000ff';
+          break;
+        case 'green':
+          block.color = '#00ff00';
+          break;
+        default:
+          block.color = '#fff';
+          break;
+      }
+
+      blocks.push(block);
+    }
+
+    // Update blocks
+function updateBlocks() {
+  for (var i = 0; i < blocks.length; i++) {
+    var block = blocks[i];
+    block.x += block.velocityX;
+
+    // Check for collision with the player
+    if (
+      block.x < player.x + player.width &&
+      block.x + block.width > player.x &&
+      block.y < player.y + player.height &&
+      block.y + block.height > player.y
+    ) {
+      // Game over if collision occurs
+      gameOver();
+    }
+
+    // Remove blocks that have moved off the canvas
+    if (block.x + block.width < 0) {
+      blocks.splice(i, 1);
+      i--;
+    }
+  }
+}
+
+
+    // Draw player on the canvas
     function drawPlayer() {
       ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
     }
 
-    // Update the game and draw the player
-    function updateGame() {
-      // Game logic here
-
-      drawPlayer();
-      requestAnimationFrame(updateGame);
+    // Draw blocks on the canvas
+    function drawBlocks() {
+      for (var i = 0; i < blocks.length; i++) {
+        var block = blocks[i];
+        ctx.fillStyle = block.color;
+        ctx.fillRect(block.x, block.y, block.width, block.height);
+      }
     }
 
-    // Start the game when the page loads
-    window.onload = function() {
-      updateGame();
-    };
+    // Draw score on the canvas
+    function drawScore() {
+      ctx.font = '20px Arial';
+      ctx.fillStyle = '#000';
+      ctx.textAlign = 'left';
+      ctx.fillText('Score: ' + score, 10, 30);
+    }
+
+    // Game loop
+    function gameLoop() {
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!isGameOver) {
+        // Update player position
+        updatePlayerPosition();
+
+        // Update and draw blocks
+        updateBlocks();
+        drawBlocks();
+
+        // Draw player and score
+        drawPlayer();
+        drawScore();
+
+        // Request animation frame for the next game loop iteration
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    // Start the game loop
+    gameLoop();
+
+    // Interval to spawn red blocks (every 2 seconds)
+    setInterval(function() {
+      if (!isGameOver) {
+        dropBlock('red', blockSpeeds.red);
+      }
+    }, 2000);
+
+    // Interval to spawn blue blocks (every 1 second)
+    setInterval(function() {
+      if (!isGameOver) {
+        dropBlock('blue', blockSpeeds.blue);
+      }
+    }, 1000);
+
+    // Interval to spawn green blocks (every 3 seconds)
+    setInterval(function() {
+      if (!isGameOver) {
+        dropBlock('green', blockSpeeds.green);
+      }
+    }, 3000);
   </script>
 </body>
 </html>
