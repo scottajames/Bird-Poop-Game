@@ -82,17 +82,17 @@
         if (isGameOver) {
           restartGame();
         } else {
-          if (score >= 10) {
-            dropBlock();
-            score -= 10;
-          }
-          if (score < 10) {
-            score = 0;
-            gameOver();
-          }
-        }
+      if (score < 10) {
+        score = 0;
+        gameOver();
+      } else {
+        score -= 10;
+        player.y -= 2.5;
+        dropBlock();
       }
-    });
+    }
+  }
+});
 
     // Handle keyup event for left and right arrow keys
     document.addEventListener('keyup', function(event) {
@@ -249,7 +249,7 @@ function updateBlockPositions() {
 
         // Increase the score
         score += 50;
-      player.y -= 20;
+      player.y -= 2.5;
       blocks.splice(i, 1);
       i--;
       }
