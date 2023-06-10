@@ -3,29 +3,29 @@
 <head>
   <title>Pooping Block Game</title>
   <style>
-    body {
-      text-align: center;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      height: 92.5vh;
-    }
+  body {
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh; /* Set the body height to occupy the full viewport height */
+  }
 
-    #gameCanvas {
-      background-color: #f0f0f0;
-      border: 1px solid #999;
-      display: block;
-      width: 40vw;
-      height: 85vh;
-    }
+  #gameCanvas {
+    display: block;
+    margin: 0 auto; /* Center horizontally */
+    background-color: #f0f0f0; /* Background color */
+    background-image: url('background.png'); /* Background image */
+    background-size: cover; /* Transparent background for the canvas */
+  }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
 
   <script>
     var canvas = document.getElementById('gameCanvas');
@@ -34,38 +34,24 @@
     var isGameOver = false;
     var score = 100;
 
-    var playerImage;
-    var player = {
-      x: canvas.width / 10,              // Starting position of the player on the x-axis
-      y: canvas.height / 5,              // Starting position of the player on the y-axis
-      width: canvas.width * 0.08,        // Width of the player using vw unit
-      height: canvas.height * 0.07,      // Height of the player using vh unit
-      velocityX: 0,                      // Velocity of the player on the x-axis
-      velocityY: 0,                      // Velocity of the player on the y-axis
-      isMovingLeft: false,               // Track if the player is moving left
-      isMovingRight: false,              // Track if the player is moving right
-      isJumping: false                   // Track if the player is jumping
-    };
-
-    // Load player images
-    var playerImageRight = new Image();
-    playerImageRight.src = 'BirdRight.png';
-
+    // Load player image
     var playerImageLeft = new Image();
     playerImageLeft.src = 'BirdLeft.png';
 
-    // Set initial player image
-    playerImage = playerImageRight;
+    var playerImageRight = new Image();
+    playerImageRight.src = 'BirdRight.png';
 
-    // Block variables
-    var blocks = [];
-    var enemyBlocks = [];
-    var blockWidth = 30;
-    var blockHeight = 30;
-    var blockSpeeds = {
-      red: 2,    // Speed for red block (interval: 2 seconds)
-      blue: 1,   // Speed for blue block (interval: 1 second)
-      green: 3   // Speed for green block (interval: 3 seconds)
+    var player = {
+      x: canvas.width / 10,
+      y: canvas.height / 5,
+      width: 50,
+      height: 28,
+      velocityX: 0,
+      velocityY: 0,
+      isMovingLeft: false,
+      isMovingRight: false,
+      isJumping: false,
+      image: playerImageRight // Start with the left image
     };
 
     // Load enemy block images
@@ -78,18 +64,23 @@
     var enemyBlockImage3 = new Image();
     enemyBlockImage3.src = 'enemythree.png';
 
-    // Function to spawn an enemy block
-    function spawnEnemyBlock(image) {
-      var enemyBlock = {
-        x: canvas.width,                 // Starting position of the enemy block on the x-axis (right side of the canvas)
-        y: canvas.height - blockHeight,  // Starting position of the enemy block on the y-axis (bottom of the canvas)
-        width: blockWidth,               // Width of the enemy block
-        height: blockHeight,             // Height of the enemy block
-        velocityX: -2,                   // Velocity of the enemy block on the X-axis (moving left)
-        image: image                     // Image of the enemy block
-      };
+    var blockWidth = 70;   // Width of the enemy block
+    var blockHeight = 110; // Height of the enemy block
 
-      enemyBlocks.push(enemyBlock);
+    // Function to spawn an enemy block
+    function spawnEnemyBlock(image, delay) {
+      setTimeout(function () {
+        var enemyBlock = {
+          x: canvas.width,                 // Starting position of the enemy block on the x-axis (right side of the canvas)
+          y: canvas.height - blockHeight,  // Starting position of the enemy block on the y-axis (bottom of the canvas)
+          width: blockWidth,               // Width of the enemy block
+          height: blockHeight,             // Height of the enemy block
+          velocityX: -2,                   // Velocity of the enemy block on the X-axis (moving left)
+          image: image                     // Image of the enemy block
+        };
+
+        enemyBlocks.push(enemyBlock);
+      }, delay);
     }
 
     // Function to drop a block from the player
@@ -100,12 +91,13 @@
         width: 5,                         // Width of the block
         height: 5,                        // Height of the block
         velocityX: 0,                     // Velocity of the block on the X-axis (initialized as 0)
-        velocityY: 5                      // Velocity of the block on the Y-axis (moving downwards)
+        velocityY: 5,                      // Velocity of the block on the Y-axis (moving downwards)
+        color: 'white'
       };
 
       blocks.push(block);
       score -= 10;
-      player.y -= 3;
+      player.y -= 10;
     }
 
     // Update block positions
@@ -168,12 +160,12 @@
 
     // Draw the player
     function drawPlayer() {
-      ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+      ctx.drawImage(player.image, player.x, player.y, player.width, player.height);
     }
 
     // Draw the blocks
     function drawBlocks() {
-      ctx.fillStyle = 'black';
+      ctx.fillStyle = 'white';
       for (var i = 0; i < blocks.length; i++) {
         var block = blocks[i];
         ctx.fillRect(block.x, block.y, block.width, block.height);
@@ -191,55 +183,92 @@
     // Draw the score
     function drawScore() {
       ctx.fillStyle = 'black';
-      ctx.font = '24px Arial';
-      ctx.fillText('Score: ' + score, 10, 30);
+      ctx.font = '30px Arial, Helvetica, sans-serif';
+      ctx.fillText('Score: ' + score, 10, 28);
     }
 
     // Game over
-    function gameOver() {
-      isGameOver = true;
-      ctx.fillStyle = 'black';
-      ctx.font = '36px Arial';
-      ctx.fillText('Game Over', canvas.width / 2 - 80, canvas.height / 2);
+function gameOver() {
+  isGameOver = true;
+  ctx.fillStyle = 'black';
+  ctx.font = '40px Arial, Helvetica, sans-serif';
 
-      ctx.font = '24px Arial';
-      ctx.fillText('Press space to restart', canvas.width / 2 - 110, canvas.height / 2 + 40);
+  // Calculate the position to center the text
+  var gameOverTextX = canvas.width / 2 - ctx.measureText('Game Over').width / 2;
+  var gameOverTextY = canvas.height / 3;
 
-      // Keyboard event handler for restarting the game
-      document.addEventListener('keydown', restartHandler);
-    }
+  // Draw the "Game Over" text
+  ctx.fillText('Game Over', gameOverTextX, gameOverTextY);
 
-    function restartHandler(event) {
-      if (event.key === ' ') {
-        document.removeEventListener('keydown', restartHandler); // Remove the event listener
-        restartGame();
-      }
-    }
+  ctx.font = '36px Arial, Helvetica, sans-serif';
+
+  // Calculate the position to center the text
+  var restartTextX = canvas.width / 2 - ctx.measureText('Press space to restart').width / 2;
+  var restartTextY = canvas.height / 2.8 + 20;
+
+  // Draw the "Press space to restart" text
+  ctx.fillText('Press space to restart', restartTextX, restartTextY);
+
+  // Keyboard event handler for restarting the game
+  document.addEventListener('keydown', restartHandler);
+}
+
+function restartHandler(event) {
+  if (event.key === ' ') {
+    document.removeEventListener('keydown', restartHandler); // Remove the event listener
+    restartGame();
+  }
+}
+
+restartGame(); // Start the game initially
+gameOver(); // Show "Game Over" message immediately
 
     // Restart the game
-    function restartGame() {
-      // Reset the game variables
-      isGameOver = false;
-      score = 100;
-      blocks = [];
-      enemyBlocks = [];
+function restartGame() {
+  // Reset the game variables
+  isGameOver = false;
+  score = 100;
+  blocks = [];
+  enemyBlocks = [];
 
-      // Reset the player position and velocity
-      player.x = canvas.width / 10;
-      player.y = canvas.height / 5;
-      player.velocityX = 0;
-      player.velocityY = 0;
-      player.isMovingLeft = false;
-      player.isMovingRight = false;
-      player.isJumping = false;
+  // Reset the player position and velocity
+  player.x = canvas.width / 10;
+  player.y = canvas.height / 5;
+  player.velocityX = 0;
+  player.velocityY = 0;
+  player.isMovingLeft = false;
+  player.isMovingRight = false;
+  player.isJumping = false;
 
-      // Spawn initial enemy blocks
-      spawnEnemyBlock(enemyBlockImage1);
-      spawnEnemyBlock(enemyBlockImage2);
-      spawnEnemyBlock(enemyBlockImage3);
+  // Function to continuously spawn enemy blocks
+  function spawnEnemyBlocks() {
+    if (!isGameOver) {
+      var randomDelay = Math.random() * 800 + 1500; // Random delay between 1s and 1.5s
+      var randomImage = Math.floor(Math.random() * 3) + 1; // Randomly choose between three enemy block images
 
-      update(); // Start the game loop
+      var image;
+      switch (randomImage) {
+        case 1:
+          image = enemyBlockImage1;
+          break;
+        case 2:
+          image = enemyBlockImage2;
+          break;
+        case 3:
+          image = enemyBlockImage3;
+          break;
+      }
+
+      spawnEnemyBlock(image, randomDelay); // Pass the image and delay as arguments
+      setTimeout(spawnEnemyBlocks, randomDelay); // Spawn the next enemy block
     }
+  }
+
+  // Start spawning enemy blocks
+  spawnEnemyBlocks();
+
+  update(); // Start the game loop
+}
 
     // Keyboard event handlers
     document.addEventListener('keydown', function (event) {
@@ -247,12 +276,12 @@
         case 'ArrowLeft':
           player.isMovingLeft = true;
           player.isMovingRight = false;
-          playerImage = playerImageLeft;
+          player.image = playerImageLeft;
           break;
         case 'ArrowRight':
           player.isMovingRight = true;
           player.isMovingLeft = false;
-          playerImage = playerImageRight;
+          player.image = playerImageRight;
           break;
         case ' ':
           if (!isGameOver) {
@@ -293,7 +322,7 @@
 
       // Apply gravity to the player
       if (player.y + player.height < canvas.height) {
-        player.velocityY += 0.0075;
+        player.velocityY += 0.001;
         player.y += player.velocityY;
       } else {
         // Player has hit the bottom of the canvas
@@ -303,31 +332,27 @@
 
     // Update the game
     function update() {
-  if (!isGameOver) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!isGameOver) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    updateBlockPositions();
-    updatePlayerPosition();
+        updateBlockPositions();
+        updatePlayerPosition();
 
-    drawPlayer();
-    drawBlocks();
-    drawEnemyBlocks();
-    drawScore();
+        drawPlayer();
+        drawBlocks();
+        drawEnemyBlocks();
+        drawScore();
 
-    // Check if score is below 10
-    if (score < 10) {
-      gameOver();
-    } else {
-      requestAnimationFrame(update);
+        // Check if score is below 0
+        if (score <= 0) {
+          gameOver();
+        }
+
+        requestAnimationFrame(update);
+      }
     }
-  }
-}
 
-    // Start the game
-    spawnEnemyBlock(enemyBlockImage1);
-    spawnEnemyBlock(enemyBlockImage2);
-    spawnEnemyBlock(enemyBlockImage3);
-    update();
+    restartGame(); // Start the game initially
   </script>
 </body>
 </html>
